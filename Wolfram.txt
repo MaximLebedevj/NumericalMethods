@@ -1,0 +1,13 @@
+leqn = Laplacian[u[x, y], {x, y}] == 0;
+
+\[CapitalOmega] = Rectangle[{0, 0}, {1, 1}];
+
+dcond = DirichletCondition[u[x, y] == -x + 4 y^2, True]
+
+sol = DSolveValue[{leqn, dcond}, 
+  u[x, y], {x, y} \[Element] \[CapitalOmega]]
+
+asol = sol /. {\[Infinity] -> 300} // Activate;
+
+Plot3D[asol // Evaluate, {x, y} \[Element] \[CapitalOmega], 
+ PlotRange -> All, PlotTheme -> "Business"]
