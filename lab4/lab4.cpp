@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include <fstream>
 
 double phi(double x, double y) {
@@ -9,7 +10,7 @@ int main() {
     std::ofstream fout("lab4_points.txt");
     int a, b, M, N;
     a = b = 1;
-    M = N = 100;
+    M = N = 10000;
     double eps = 1e-4;
 
     double hx = static_cast<double>(a) / N;
@@ -84,6 +85,9 @@ int main() {
     int iter = 0;
     while (true) {
         max = -1.0;
+        if (iter % 5 == 0) {
+            std::cout << iter << " " << std::endl;
+        }
         iter++;
         for (int i = 1; i < N; i++) {
             for (int j = 1; j < M; j++) {
