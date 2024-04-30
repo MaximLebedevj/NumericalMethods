@@ -9,7 +9,7 @@ def phi(x_, y_):
 
 
 a = b = 1
-M = N = 10
+M = N = 100
 hx = a / N
 hy = b / M
 eps = 1e-4
@@ -62,18 +62,18 @@ print(u1)
 
 
 # Визуализация
-cmap = mpl.colormaps['magma']
-X, Y = np.meshgrid(xi, yi)
-fig1 = plt.figure(figsize=(25, 25))
-ax = fig1.add_subplot(121)
-surf = ax.contourf(X, Y, u1.T, cmap=cm.magma)
-fig1.colorbar(surf, shrink=1, aspect=20)
-plt.grid(True)
-
-cmap = mpl.colormaps['magma']
-X, Y = np.meshgrid(xi, yi)
-ax = fig1.add_subplot(122, projection='3d')
-surf = ax.plot_surface(X, Y, u1.T, cmap=cm.magma, alpha=1, label='Численное решение')
-fig1.colorbar(surf, shrink=1, aspect=20)
-plt.grid(True)
-plt.show()
+# cmap = mpl.colormaps['magma']
+# X, Y = np.meshgrid(xi, yi)
+# fig1 = plt.figure(figsize=(25, 25))
+# ax = fig1.add_subplot(121)
+# surf = ax.contourf(X, Y, u1.T, cmap=cm.magma)
+# fig1.colorbar(surf, shrink=1, aspect=20)
+# plt.grid(True)
+#
+# cmap = mpl.colormaps['magma']
+# X, Y = np.meshgrid(xi, yi)
+# ax = fig1.add_subplot(122, projection='3d')
+# surf = ax.plot_surface(X, Y, u1.T, cmap=cm.magma, alpha=1, label='Численное решение')
+# fig1.colorbar(surf, shrink=1, aspect=20)
+# plt.grid(True)
+# plt.show()
