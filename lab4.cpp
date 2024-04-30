@@ -9,7 +9,7 @@ int main() {
     std::ofstream fout("lab4_points.txt");
     int a, b, M, N;
     a = b = 1;
-    M = N = 10;
+    M = N = 100;
     double eps = 1e-4;
 
     double hx = static_cast<double>(a) / N;
@@ -18,12 +18,16 @@ int main() {
     double *xi = new double[N + 1];
     for (int i = 0; i < N + 1; i++) {
         xi[i] = hx * i;
+        fout << xi[i] << " ";
     }
+    fout << "\n";
 
     double *yi = new double[M + 1];
     for (int i = 0; i < M + 1; i++) {
         yi[i] = hy * i;
+        fout << yi[i] << " ";
     }
+    fout << "\n";
 
     double **u = new double*[N + 1];
     for (int i = 0; i < N + 1; ++i) {
