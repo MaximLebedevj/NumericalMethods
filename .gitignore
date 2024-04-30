@@ -1,2 +1,5 @@
 matplotlib-cpp/
+*.jpg
+*.jpeg
 *.png
+*.gif
