@@ -3,3 +3,4 @@ matplotlib-cpp/
 *.jpeg
 *.png
 *.gif
+*.out
