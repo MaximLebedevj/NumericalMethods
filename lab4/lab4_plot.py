@@ -1,6 +1,16 @@
 import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
+import requests
+import os
+
+
+TOKEN = "7080239827:AAE-4Az5vD-DWrQRgm5o58sEWIDepwAkufI" 
+chat_id = "1376554020"
+message = "The program: " + os.getcwd() + " has been completed" 
+url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
+requests.get(url).json()
+
 
 with open('lab4_points.txt') as f:
     arrays = [[float(x) for x in line.split()] for line in f]
