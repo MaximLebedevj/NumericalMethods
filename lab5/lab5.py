@@ -58,6 +58,8 @@ for j in range(1, len(ti) - 1):
         u[i][j + 1] = 2 * u[i][j] - u[i][j - 1] + a ** 2 * tau ** 2 / h ** 2 * (
                     u[i - 1][j] - 2 * u[i][j] + u[i + 1][j]) + tau ** 2 * g(xi[i], ti[j])
 
+print("u = ", u) 
+
 
 # Визуализация
 fig1 = plt.figure(figsize=(25, 25))
@@ -67,7 +69,6 @@ ax = fig1.add_subplot(projection='3d')
 surf = ax.plot_surface(X, Y, u.T, cmap=cm.magma, alpha=1, label='Численное решение')
 fig1.colorbar(surf, shrink=1, aspect=20)
 plt.grid(True)
-plt.show()
 
 
 i = T  # time-step
@@ -79,7 +80,7 @@ x = xi.copy()  # space axis
 min_u = np.min(u)
 
 fig = plt.figure()
-ax = plt.axes(xlim=(0, j),
+ax = plt.axes(xlim=(0 , j),
               ylim=(np.min(u) - 0.1, np.max(u) + 0.1),
               )
 
@@ -94,7 +95,7 @@ def init():
 def animate(i):
     # Refresh the plot
     ax.set_title("Timestamp #{}".format(i + 1))
-    pts.set_data(x, z[i, :])  # plotting space axis at time-step i
+    pts.set_data(x, z[:, i])  # plotting space axis at time-step i
     return pts,
 
 
@@ -108,5 +109,6 @@ anim = animation.FuncAnimation(fig, animate, init_func=init,
                                interval=int(1000 / frame_dt),
                                blit=False
                                )
+plt.grid(True)
 plt.show()
 
