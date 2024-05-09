@@ -13,8 +13,6 @@
 #include <cstring>
 #include <fstream>
 
-
-
 struct FileMapping {
     int fd;
     size_t fsize;
@@ -26,57 +24,95 @@ double phi(double x, double y) {
 }
 
 int main() {
-
     FILE *file = fopen("lab4_points.txt","wb");
     int a, b, M, N;
     a = b = 1;
-    M = N = 100;
+    M = N = 10;
     double eps = 1e-4;
 
     double hx = (double)a / N;
     double hy = (double)b / M; 
 
-    const char* fname = "lab4_points.txt";
 
-    int fd = open(fname, O_RDWR, 0);
-    if (fd < 0) {
+
+    const char* fname_prev = "prev.txt";
+    FILE* file_prev = fopen(fname_prev, "w");
+    double out = 0.0;
+    for (int i = 0; i < N + 1; ++i) {
+        for (int j = 0; j < M + 1; ++j) {
+            fprintf(file_prev, "%lf", out);
+        }
+    }
+    fclose(file_prev);
+
+    int fd_prev = open(fname_prev, O_RDWR, 0);
+    if (fd_prev < 0) {
         std::cerr << "fileMappingCreate - open failed, fname = "
-                  << fname << ", " << strerror(errno) << std::endl;
+                  << fname_prev << ", " << strerror(errno) << std::endl;
     }
 
-    struct stat st;
-    if (fstat(fd, &st) < 0) {
-        std::cerr << "fileMappingCreate - fstat failed, fname = "
-                  << fname << ", " << strerror(errno) << std::endl;
-        close(fd);
-    }
-    size_t fsize = (N + 1) * (M + 1);
+    size_t fsize_prev = (N + 1) * (M + 1);
 
-    double* dataPtr = (double*)mmap(nullptr, fsize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (dataPtr == MAP_FAILED) {
+    double* dataPtr_prev = (double*)mmap(nullptr, fsize_prev, PROT_READ | PROT_WRITE, MAP_SHARED, fd_prev, 0);
+    if (dataPtr_prev == MAP_FAILED) {
         std::cerr << "FileMappingCreate -nmap failed, fname = "
-                  << fname << ", " << strerror(errno) << std::endl;
-        close(fd);
+                  << fname_prev << ", " << strerror(errno) << std::endl;
+        close(fd_prev);
     }
 
-    FileMapping* mapping = (FileMapping*)malloc(sizeof(FileMapping));
-    if (mapping == nullptr) {
+    FileMapping* mapping_prev = (FileMapping*)malloc(sizeof(FileMapping));
+    if (mapping_prev == nullptr) {
         std::cerr << "fileMappingCreate - malloc failed, fname = "
-                  << fname << std::endl;
-        munmap(dataPtr, fsize);
-        close(fd);
+                  << fname_prev << std::endl;
+        munmap(dataPtr_prev, fsize_prev);
+        close(fd_prev);
     }
 
-    mapping->fd = fd;
-    mapping->fsize = fsize;
-    mapping->dataPtr = dataPtr;
+    mapping_prev->fd = fd_prev;
+    mapping_prev->fsize = fsize_prev;
+    mapping_prev->dataPtr = dataPtr_prev;
 
 
-    mapping->dataPtr[1] = 777.0;
-    std::cout << mapping->dataPtr[1] << std::endl;
+    const char* fname_curr = "curr.txt";
+    FILE* file_curr = fopen(fname_curr, "w");
+    out = 0.0;
+    for (int i = 0; i < N + 1; ++i) {
+        for (int j = 0; j < M + 1; ++j) {
+            fprintf(file_curr, "%lf", out);
+        }
+    }
+    fclose(file_curr);
+
+    int fd_curr = open(fname_curr, O_RDWR, 0);
+    if (fd_curr < 0) {
+        std::cerr << "fileMappingCreate - open failed, fname = "
+                  << fname_curr << ", " << strerror(errno) << std::endl;
+    }
+
+    size_t fsize_curr = (N + 1) * (M + 1);
+
+    double* dataPtr_curr = (double*)mmap(nullptr, fsize_curr, PROT_READ | PROT_WRITE, MAP_SHARED, fd_curr, 0);
+    if (dataPtr_curr == MAP_FAILED) {
+        std::cerr << "FileMappingCreate -nmap failed, fname = "
+                  << fname_curr << ", " << strerror(errno) << std::endl;
+        close(fd_curr);
+    }
+
+    FileMapping* mapping_curr = (FileMapping*)malloc(sizeof(FileMapping));
+    if (mapping_curr == nullptr) {
+        std::cerr << "fileMappingCreate - malloc failed, fname = "
+                  << fname_curr << std::endl;
+        munmap(dataPtr_curr, fsize_curr);
+        close(fd_curr);
+    }
+
+    mapping_curr->fd = fd_curr;
+    mapping_curr->fsize = fsize_curr;
+    mapping_curr->dataPtr = dataPtr_curr;
 
 
-    std::cout << fsize << std::endl;
+    //mapping->dataPtr[1] = 777.0;
+
 
     // code block #1
     double *xi = (double*)malloc((N + 1) * sizeof(double));
@@ -101,48 +137,36 @@ int main() {
         u[i] = (double*)malloc((M + 1) * sizeof(double));
     }
 
-    // Инициализируем u[][] нулями
+    // Инициализируем u[][] нулями  
     for (int i = 0; i < N + 1; ++i) {
         for (int j = 0; j < M + 1; ++j) {
-            u[i][j] = 0;
+            mapping_prev->dataPtr[j + i * (M + 1)] = 0.0;
         }
     }
 
     // Граничное условие u(x, 0)
     for (int i = 0; i < N + 1; ++i) {
-        u[i][0] = phi(xi[i], 0);
+        mapping_prev->dataPtr[i * (N + 1)] = phi(xi[i], 0);
     }
 
     // Граничное условие u(x, M)
     for (int i = 0; i < N + 1; ++i) {
-        u[i][M] = phi(xi[i], yi[M]);
+        mapping_prev->dataPtr[(M + 1) * (i + 1) - 1] = phi(xi[i], yi[M]);
     }
 
     // Граничное условие u(0, y)
     for (int j = 0; j < M + 1; ++j) {
-        u[0][j] = phi(0, yi[j]);
+        mapping_prev->dataPtr[j] = phi(0, yi[j]);
     }
 
     // Граничное условие u(N, y)
     for (int j = 0; j < M + 1; ++j) {
-        u[N][j] = phi(xi[N], yi[j]);
+        mapping_prev->dataPtr[j + (M + 1) * N] = phi(xi[N], yi[j]);
     }
 
-    double **u0 = (double**)malloc((N + 1) * sizeof(double));
-    for (int i = 0; i < M + 1; ++i) {
-        u0[i] = (double*)malloc((M + 1) * sizeof(double));
-    }
-
-    double **u1 = (double**)malloc((N + 1) * sizeof(double));
-    for (int i = 0; i < M + 1; ++i) {
-        u1[i] = (double*)malloc((M + 1) * sizeof(double));
-    }
-
-    // Копируем u[][] в u0[][] и u1[][]
     for (int i = 0; i < N + 1; ++i) {
         for (int j = 0; j < M + 1; ++j) {
-            u0[i][j] = u[i][j];
-            u1[i][j] = u[i][j];
+            mapping_curr->dataPtr[j + i * (M + 1)] = mapping_prev->dataPtr[j + i * (M + 1)];
         }
     }
 
@@ -152,17 +176,17 @@ int main() {
     while (true) {
         max = -1.0;
         if (iter % 100 == 0) {
-            printf("%d\n", iter);
+            //printf("%d\n", iter);
         }
         iter++;
         for (int i = 1; i < N; ++i) {
             for (int j = 1; j < M; ++j) {
-                u1[i][j] = 1.0 / 4.0 * (u1[i - 1][j] + u0[i + 1][j] + u0[i][j + 1] + u1[i][j - 1]);
+                mapping_curr->dataPtr[j + i * (M + 1)] = 1.0 / 4.0 * (mapping_curr->dataPtr[(j - 1) + i * (M + 1)] + mapping_prev->dataPtr[(j + 1) + i * (M + 1)] + mapping_prev->dataPtr[j + (i + 1) * (M + 1)] + mapping_curr->dataPtr[j + (i - 1) * (M + 1)]);
             }
         }
         for (int i = 0; i < N + 1; ++i) {
             for (int j = 0; j < M + 1; ++j) {
-                temp = fabs(u1[i][j] - u0[i][j]);
+                temp = fabs(mapping_curr->dataPtr[j + i * (M + 1)] - mapping_prev->dataPtr[j + i * (M + 1)]);
                 max = (temp > max) ? temp : max; 
             }
         }
@@ -171,38 +195,33 @@ int main() {
         }
         for (int i = 0; i < N + 1; ++i) {
             for (int j = 0; j < M + 1; ++j) {
-                u0[i][j] = u1[i][j];
+                mapping_prev->dataPtr[j + i * (M + 1)] = mapping_curr->dataPtr[j + i * (M + 1)];
             }
         }
     }
 
-    fwrite(u1, sizeof(double), (N + 1) * (M + 1), file);
-
+    std::cout << std::endl;
     for (int i = 0; i < N + 1; ++i) {
         for (int j = 0; j < M + 1; ++j) {
-            fprintf(file, "%lf ", u1[i][j]);
+            std::cout << mapping_curr->dataPtr[j + i * (M + 1)] << " ";
         }
-        fprintf(file, "\n");
+        std::cout << std::endl;
     }
+
+
+
+
+
 
     free(xi);
     free(yi);
 
-    for (int i = 0; i < N + 1; ++i) {
-        free(u[i]);
-        free(u0[i]);
-        free(u1[i]);
-    }
-
-    free(u);
-    free(u0);
-    free(u1);
 
     fclose(file);
 
-    munmap(mapping->dataPtr, mapping->fsize);
-    close(mapping->fd);
-    free(mapping);
+    munmap(mapping_prev->dataPtr, mapping_prev->fsize);
+    close(mapping_prev->fd);
+    free(mapping_prev);
 
     return 0;
 }
