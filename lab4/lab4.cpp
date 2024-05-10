@@ -88,10 +88,10 @@ void mmap_free(FileMapping* mapping) {
     free(mapping);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     int a, b, M, N;
     a = b = 1;
-    N = M = 1000;
+    N = M = argc > 1 ? atoi(argv[1]) : 100;
     double eps = 1e-4;
 
     // writing N, M to size.txt
