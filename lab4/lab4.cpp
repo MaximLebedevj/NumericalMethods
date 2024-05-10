@@ -1,17 +1,10 @@
-#include <cmath>
-//#include <math.h>
-//#include <iostream>
-//#include <fstream>
-//#include <time.h> 
-#include <stdio.h>
+#include <math.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <unistd.h>
-#include <string>
 #include <iostream> 
 #include <cstring>
-#include <fstream>
+#include <sys/stat.h>
 
 struct FileMapping {
     int fd;
@@ -72,7 +65,13 @@ FileMapping* mmap_malloc_(int fd, size_t fsize, double* dataPtr) {
 FileMapping* mmap_create(const char* fname, size_t size1, size_t size2) {
     fill_file(fname, size1, size2);
     int fd = mmap_open_file_(fname);
-    size_t fsize = size1 * size2;
+    struct stat st;
+    if(fstat(fd, &st) < 0) {
+        std::cerr << "fileMappingCreate - fstat failed, fname = "
+                  << fname << ", " << strerror(errno) << std::endl;
+        close(fd);
+    }
+    size_t fsize = (size_t)st.st_size;
     double* dataPtr = mmap_(fd, fsize);
     FileMapping* mapping = mmap_malloc_(fd, fsize, dataPtr);
 
@@ -92,7 +91,7 @@ void mmap_free(FileMapping* mapping) {
 int main() {
     int a, b, M, N;
     a = b = 1;
-    N = M = 10;
+    N = M = 1000;
     double eps = 1e-4;
 
     // writing N, M to size.txt
@@ -140,7 +139,7 @@ int main() {
         for (int j = 0; j < M + 1; ++j) {
             mapping_prev->dataPtr[j + i * (M + 1)] = 0.0;
         }
-    }
+    } 
 
     // Граничное условие u(x, 0)
     for (int i = 0; i < N + 1; ++i) {
@@ -170,11 +169,11 @@ int main() {
 
     double max;
     double temp;
-    int iter = 0;
+    int iter = 0; 
     while (true) {
         max = -1.0;
-        if (iter % 100 == 0) {
-            //printf("%d\n", iter);
+        if (iter % 1 == 0) {
+            printf("%d\n", iter);
         }
         iter++;
         for (int i = 1; i < N; ++i) {
@@ -196,14 +195,6 @@ int main() {
                 mapping_prev->dataPtr[j + i * (M + 1)] = mapping_curr->dataPtr[j + i * (M + 1)];
             }
         }
-    }
-
-    std::cout << std::endl;
-    for (int i = 0; i < N + 1; ++i) {
-        for (int j = 0; j < M + 1; ++j) {
-            std::cout << mapping_curr->dataPtr[j + i * (M + 1)] << " ";
-        }
-        std::cout << std::endl;
     }
 
     free(xi);
