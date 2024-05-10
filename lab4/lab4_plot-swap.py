@@ -23,7 +23,6 @@ f.close()
 f = open("curr.txt", mode="rb")
 ans = np.array(struct.unpack(('d'* N * M), f.read(8 * N * M)))
 ans = np.reshape(ans, (-1, M))
-print(ans)
 f.close()
 
 
