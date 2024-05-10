@@ -15,9 +15,15 @@ double phi(double x, double y) {
     return -x + 4 * pow(y, 2); 
 }
 
-void fill_file(const char* fname, size_t size1, size_t size2, double* write_val) {
-    FILE* file = fopen(fname, "wb");
-    fwrite(write_val, sizeof(double), size1 * size2, file);
+
+void fill_file(const char* fname, size_t size1, size_t size2) {
+    FILE* file = fopen(fname, "w");
+    double write_val = 0.0;
+    for (int i = 0; i < size1; ++i) {
+        for (int j = 0; j < size2; ++j) {
+            fprintf(file, "%lf", write_val);
+        }
+    }
     fclose(file);
 }
 
@@ -53,8 +59,8 @@ FileMapping* mmap_malloc_(int fd, size_t fsize, double* dataPtr) {
     return mapping;
 }
 
-FileMapping* mmap_create(const char* fname, size_t size1, size_t size2, double* write_val) {
-    fill_file(fname, size1, size2, write_val);
+FileMapping* mmap_create(const char* fname, size_t size1, size_t size2) {
+    fill_file(fname, size1, size2);
     int fd = mmap_open_file_(fname);
     struct stat st;
     if(fstat(fd, &st) < 0) {
@@ -119,18 +125,13 @@ int main(int argc, char* argv[]) {
     fwrite(yi, sizeof(double), M + 1, file);
     fclose(file);
 
-    double* write_val = (double*)malloc((N + 1) * (M + 1) * sizeof(double));
-    for (int i = 0; i < (N + 1) * (M + 1); ++i) {
-        write_val[i] = 0.0;
-    }
-
     // mmap for u_prev
     const char* fname_prev = "prev.txt";
-    FileMapping* mapping_prev = mmap_create(fname_prev, N + 1, M + 1, write_val);
+    FileMapping* mapping_prev = mmap_create(fname_prev, N + 1, M + 1);
 
     // mmap for u_curr
     const char* fname_curr = "curr.txt";
-    FileMapping* mapping_curr = mmap_create(fname_curr, N + 1, M + 1, write_val);
+    FileMapping* mapping_curr = mmap_create(fname_curr, N + 1, M + 1);
 
     // initialize u_prev with zeros
     for (int i = 0; i < N + 1; ++i) {
@@ -198,8 +199,6 @@ int main(int argc, char* argv[]) {
 
     free(xi);
     free(yi);
-
-    free(write_val);
 
     mmap_free(mapping_prev);
     mmap_free(mapping_curr);
