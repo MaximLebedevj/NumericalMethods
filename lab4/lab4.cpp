@@ -2,8 +2,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <iostream> 
-#include <cstring>
+#include <stdio.h>
 #include <sys/stat.h>
 
 struct FileMapping {
@@ -16,22 +15,16 @@ double phi(double x, double y) {
     return -x + 4 * pow(y, 2); 
 }
 
-void fill_file(const char* fname, size_t size1, size_t size2) {
-    FILE* file = fopen(fname, "w");
-    double write_val = 0.0;
-    for (int i = 0; i < size1; ++i) {
-        for (int j = 0; j < size2; ++j) {
-            fprintf(file, "%lf", write_val);
-        }
-    }
+void fill_file(const char* fname, size_t size1, size_t size2, double* write_val) {
+    FILE* file = fopen(fname, "wb");
+    fwrite(write_val, sizeof(double), size1 * size2, file);
     fclose(file);
 }
 
 int mmap_open_file_(const char* fname) {
     int fd = open(fname, O_RDWR, 0);
     if (fd < 0) {
-        std::cerr << "fileMappingCreate - open failed, fname = "
-                  << fname << ", " << strerror(errno) << "\n";
+        printf("fileMappingCreate - open failed\n");
     }
     return fd;
 }
@@ -39,8 +32,7 @@ int mmap_open_file_(const char* fname) {
 double* mmap_(int fd, size_t fsize) {
     double* dataPtr = (double*)mmap(nullptr, fsize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (dataPtr == MAP_FAILED) {
-        std::cerr << "FileMappingCreate - mmap failed, fname = "
-        << fd << ", " << strerror(errno) << std::endl;
+        printf("FileMappingCreate - mmap failed\n");
         close(fd);
     }
     return dataPtr;
@@ -49,8 +41,7 @@ double* mmap_(int fd, size_t fsize) {
 FileMapping* mmap_malloc_(int fd, size_t fsize, double* dataPtr) {
     FileMapping* mapping = (FileMapping*)malloc(sizeof(FileMapping));
     if (mapping == nullptr) {
-        std::cerr << "fileMappingCreate - malloc failed, fname = "
-        << fd << std::endl;
+        printf("fileMappingCreate - malloc failed\n");
         munmap(dataPtr, fsize);
         close(fd);
     }
@@ -62,16 +53,16 @@ FileMapping* mmap_malloc_(int fd, size_t fsize, double* dataPtr) {
     return mapping;
 }
 
-FileMapping* mmap_create(const char* fname, size_t size1, size_t size2) {
-    fill_file(fname, size1, size2);
+FileMapping* mmap_create(const char* fname, size_t size1, size_t size2, double* write_val) {
+    fill_file(fname, size1, size2, write_val);
     int fd = mmap_open_file_(fname);
     struct stat st;
     if(fstat(fd, &st) < 0) {
-        std::cerr << "fileMappingCreate - fstat failed, fname = "
-                  << fname << ", " << strerror(errno) << std::endl;
+        printf("fileMappingCreate - fstat failed\n");
         close(fd);
     }
     size_t fsize = (size_t)st.st_size;
+    printf("fsize = %zu\n", fsize);
     double* dataPtr = mmap_(fd, fsize);
     FileMapping* mapping = mmap_malloc_(fd, fsize, dataPtr);
 
@@ -103,6 +94,8 @@ int main(int argc, char* argv[]) {
     fwrite(N_arr, sizeof(int), 1, file);
     fwrite(M_arr, sizeof(int), 1, file);
     fclose(file);
+    free(N_arr);
+    free(M_arr);
 
     double hx = (double)a / N;
     double hy = (double)b / M; 
@@ -126,41 +119,47 @@ int main(int argc, char* argv[]) {
     fwrite(yi, sizeof(double), M + 1, file);
     fclose(file);
 
+    double* write_val = (double*)malloc((N + 1) * (M + 1) * sizeof(double));
+    for (int i = 0; i < (N + 1) * (M + 1); ++i) {
+        write_val[i] = 0.0;
+    }
+
     // mmap for u_prev
     const char* fname_prev = "prev.txt";
-    FileMapping* mapping_prev = mmap_create(fname_prev, N + 1, M + 1);
+    FileMapping* mapping_prev = mmap_create(fname_prev, N + 1, M + 1, write_val);
 
     // mmap for u_curr
     const char* fname_curr = "curr.txt";
-    FileMapping* mapping_curr = mmap_create(fname_curr, N + 1, M + 1);
+    FileMapping* mapping_curr = mmap_create(fname_curr, N + 1, M + 1, write_val);
 
-    // Инициализируем u_prev нулями
+    // initialize u_prev with zeros
     for (int i = 0; i < N + 1; ++i) {
         for (int j = 0; j < M + 1; ++j) {
             mapping_prev->dataPtr[j + i * (M + 1)] = 0.0;
         }
     } 
 
-    // Граничное условие u(x, 0)
+    // boundary condition u(x, 0)
     for (int i = 0; i < N + 1; ++i) {
         mapping_prev->dataPtr[i * (N + 1)] = phi(xi[i], 0);
     }
 
-    // Граничное условие u(x, M)
+    // boundary condition u(x, M)
     for (int i = 0; i < N + 1; ++i) {
         mapping_prev->dataPtr[(M + 1) * (i + 1) - 1] = phi(xi[i], yi[M]);
     }
 
-    // Граничное условие u(0, y)
+    // boundary condition u(0, y)
     for (int j = 0; j < M + 1; ++j) {
         mapping_prev->dataPtr[j] = phi(0, yi[j]);
     }
 
-    // Граничное условие u(N, y)
+    // boundary condition u(N, y)
     for (int j = 0; j < M + 1; ++j) {
         mapping_prev->dataPtr[j + (M + 1) * N] = phi(xi[N], yi[j]);
     }
 
+    // copy mapping_prev to mapping_curr
     for (int i = 0; i < N + 1; ++i) {
         for (int j = 0; j < M + 1; ++j) {
             mapping_curr->dataPtr[j + i * (M + 1)] = mapping_prev->dataPtr[j + i * (M + 1)];
@@ -199,6 +198,8 @@ int main(int argc, char* argv[]) {
 
     free(xi);
     free(yi);
+
+    free(write_val);
 
     mmap_free(mapping_prev);
     mmap_free(mapping_curr);
