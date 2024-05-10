@@ -1,15 +1,8 @@
 import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
-import requests
-import os
 import struct
 
-TOKEN = "7080239827:AAE-4Az5vD-DWrQRgm5o58sEWIDepwAkufI"
-chat_id = "1376554020"
-message = "The program: " + os.getcwd() + " has been completed"
-url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
-requests.get(url).json()
 
 # reading N and M
 f = open("size.txt", mode="rb")
@@ -27,11 +20,14 @@ f.close()
 
 
 # reading answer
-# TODO convert to 2D array
 f = open("curr.txt", mode="rb")
 ans = np.array(struct.unpack(('d'* N * M), f.read(8 * N * M)))
+ans = np.reshape(ans, (-1, M))
+print(ans)
 f.close()
 
+
+# visualization
 cmap = plt.colormaps['magma']
 X, Y = np.meshgrid(xi, yi)
 fig = plt.figure(figsize=(25, 25))
