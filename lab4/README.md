@@ -15,7 +15,7 @@ $ python plot.py
 $ python show.py 'SIZE'.fig.pickle 
 ```
 
-# Continue mode
+### Continue mode
 During long-term calculations of large matrices, it is possible to interrupt the process
 and continue from the last state using the parameter 'continue':
 ```sh
