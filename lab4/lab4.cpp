@@ -15,9 +15,8 @@ double phi(double x, double y) {
     return -x + 4 * pow(y, 2); 
 }
 
-
 void fill_file(const char* fname, size_t size1, size_t size2) {
-    FILE* file = fopen(fname, "w");
+    FILE* file = fopen(fname, "wb");
     double write_val = 0.0;
     for (int i = 0; i < size1; ++i) {
         for (int j = 0; j < size2; ++j) {
@@ -93,13 +92,17 @@ int main(int argc, char* argv[]) {
 
     // writing N, M to size.txt
     FILE *file = fopen("size.txt","wb");
+
     int* N_arr = (int*)malloc(sizeof(int));
     N_arr[0] = N + 1;
     int* M_arr = (int*)malloc(sizeof(int));
     M_arr[0] = M + 1;
+
     fwrite(N_arr, sizeof(int), 1, file);
     fwrite(M_arr, sizeof(int), 1, file);
+
     fclose(file);
+
     free(N_arr);
     free(M_arr);
 
@@ -125,83 +128,54 @@ int main(int argc, char* argv[]) {
     fwrite(yi, sizeof(double), M + 1, file);
     fclose(file);
 
-    // mmap for u_prev
-    const char* fname_prev = "prev.txt";
-    FileMapping* mapping_prev = mmap_create(fname_prev, N + 1, M + 1);
-
     // mmap for u_curr
-    const char* fname_curr = "curr.txt";
-    FileMapping* mapping_curr = mmap_create(fname_curr, N + 1, M + 1);
-
-    // initialize u_prev with zeros
-    for (int i = 0; i < N + 1; ++i) {
-        for (int j = 0; j < M + 1; ++j) {
-            mapping_prev->dataPtr[j + i * (M + 1)] = 0.0;
-        }
-    } 
+    const char* fname_u = "ans.txt";
+    FileMapping* u = mmap_create(fname_u, N + 1, M + 1);
 
     // boundary condition u(x, 0)
     for (int i = 0; i < N + 1; ++i) {
-        mapping_prev->dataPtr[i * (N + 1)] = phi(xi[i], 0);
+        u->dataPtr[i * (N + 1)] = phi(xi[i], 0);
     }
 
     // boundary condition u(x, M)
     for (int i = 0; i < N + 1; ++i) {
-        mapping_prev->dataPtr[(M + 1) * (i + 1) - 1] = phi(xi[i], yi[M]);
+        u->dataPtr[(M + 1) * (i + 1) - 1] = phi(xi[i], yi[M]);
     }
 
     // boundary condition u(0, y)
     for (int j = 0; j < M + 1; ++j) {
-        mapping_prev->dataPtr[j] = phi(0, yi[j]);
+        u->dataPtr[j] = phi(0, yi[j]);
     }
 
     // boundary condition u(N, y)
     for (int j = 0; j < M + 1; ++j) {
-        mapping_prev->dataPtr[j + (M + 1) * N] = phi(xi[N], yi[j]);
+        u->dataPtr[j + (M + 1) * N] = phi(xi[N], yi[j]);
     }
 
-    // copy mapping_prev to mapping_curr
-    for (int i = 0; i < N + 1; ++i) {
-        for (int j = 0; j < M + 1; ++j) {
-            mapping_curr->dataPtr[j + i * (M + 1)] = mapping_prev->dataPtr[j + i * (M + 1)];
-        }
-    }
-
-    double max;
-    double temp;
-    int iter = 0; 
+    double max, tmp, diff;
+    int iter = 0;
     while (true) {
         max = -1.0;
-        if (iter % 1 == 0) {
-            printf("%d\n", iter);
-        }
         iter++;
         for (int i = 1; i < N; ++i) {
             for (int j = 1; j < M; ++j) {
-                mapping_curr->dataPtr[j + i * (M + 1)] = 1.0 / 4.0 * (mapping_curr->dataPtr[(j - 1) + i * (M + 1)] + mapping_prev->dataPtr[(j + 1) + i * (M + 1)] + mapping_prev->dataPtr[j + (i + 1) * (M + 1)] + mapping_curr->dataPtr[j + (i - 1) * (M + 1)]);
+                tmp = u->dataPtr[j + i * (M + 1)];
+                u->dataPtr[j + i * (M + 1)] = 0.25 * (u->dataPtr[(j - 1) + i * (M + 1)] + u->dataPtr[(j + 1) + i * (M + 1)] + u->dataPtr[j + (i + 1) * (M + 1)] + u->dataPtr[j + (i - 1) * (M + 1)]);
+                diff = fabs(u->dataPtr[j + i * (M + 1)] - tmp);
+                max = diff > max ? diff : max;
             }
         }
-        for (int i = 0; i < N + 1; ++i) {
-            for (int j = 0; j < M + 1; ++j) {
-                temp = fabs(mapping_curr->dataPtr[j + i * (M + 1)] - mapping_prev->dataPtr[j + i * (M + 1)]);
-                max = (temp > max) ? temp : max; 
-            }
-        }
+        printf("Max difference after %3d iterations: %f\n", iter, max);
         if (max <= eps) {
+            printf("\nConvergence achieved after %d iterations.\n", iter);
             break;
-        }
-        for (int i = 0; i < N + 1; ++i) {
-            for (int j = 0; j < M + 1; ++j) {
-                mapping_prev->dataPtr[j + i * (M + 1)] = mapping_curr->dataPtr[j + i * (M + 1)];
-            }
         }
     }
 
     free(xi);
     free(yi);
 
-    mmap_free(mapping_prev);
-    mmap_free(mapping_curr);
+    mmap_free(u);
 
     return 0;
 }
