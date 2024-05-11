@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <string.h>
 
 struct FileMapping {
     int fd;
@@ -64,8 +65,10 @@ FileMapping* mmap_malloc_(int fd, size_t fsize, double* dataPtr) {
     return mapping;
 }
 
-FileMapping* mmap_create(const char* fname, size_t size1, size_t size2) {
-    fill_file(fname, size1, size2);
+FileMapping* mmap_create(const char* fname, size_t size1, size_t size2, bool rewrite = true) {
+    if (rewrite) {
+        fill_file(fname, size1, size2);
+    }
     int fd = mmap_open_file_(fname);
     struct stat st;
     if(fstat(fd, &st) < 0) {
@@ -148,8 +151,12 @@ int main(int argc, char* argv[]) {
     fclose(file);
 
     // mmap for u_curr
+    bool rewrite = argc > 2 && !strcmp(argv[2], "continue") ? false : true;
+    if (!rewrite) {
+        printf("Continue mode\n");
+    }
     const char* fname_u = "ans.txt";
-    FileMapping* u = mmap_create(fname_u, N + 1, M + 1);
+    FileMapping* u = mmap_create(fname_u, N + 1, M + 1, rewrite);
 
     // boundary condition u(x, 0)
     for (int i = 0; i < N + 1; ++i) {
@@ -172,11 +179,17 @@ int main(int argc, char* argv[]) {
     }
 
     double max, tmp, diff;
+    int progress = 1;
     int iter = 0;
     while (true) {
         max = -1.0;
+        progress = 1;
         iter++;
         for (int i = 1; i < N; ++i) {
+            if (i == (int)(((N + 1) / 100)) * progress) {
+                progress += 1;
+                std::cout << "\rIteration " << iter << ": " <<  progress << "%" << std::flush;
+            }
             for (int j = 1; j < M; ++j) {
                 tmp = u->dataPtr[j + i * (M + 1)];
                 u->dataPtr[j + i * (M + 1)] = 0.25 * (u->dataPtr[(j - 1) + i * (M + 1)] + u->dataPtr[(j + 1) + i * (M + 1)] + u->dataPtr[j + (i + 1) * (M + 1)] + u->dataPtr[j + (i - 1) * (M + 1)]);
@@ -184,7 +197,7 @@ int main(int argc, char* argv[]) {
                 max = diff > max ? diff : max;
             }
         }
-        std::cout << "\rMax difference after " << iter << " iterations: " << max << std::flush;
+        std::cout << " -> max difference after " << iter << " iterations: " << max << std::flush;
         if (max <= eps) {
             printf("\nConvergence achieved after %d iterations.\n", iter);
             break;
