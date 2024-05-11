@@ -126,7 +126,6 @@ int main(int argc, char* argv[]) {
 
     if (argc > 1 && !strcmp(argv[1], "continue")) {
         N = M = (int)std::sqrt(file_size / 8) - 1;
-        std::cout << "N = " << N << "\n";
     }
 
     // writing N, M to size.txt
@@ -208,7 +207,9 @@ int main(int argc, char* argv[]) {
         }
         std::cout << " -> max difference after " << iter << " iterations: " << max << std::flush;
         if (max <= eps) {
-            printf("\nConvergence achieved after %d iterations.\n", iter);
+            printf("\n\nConvergence achieved\n");
+            printf("-> run 'python plot.py' to save plot\n");
+            printf("-> run 'python show.py' SIZE.fig.pickle to show the plot");
             break;
         }
     }
