@@ -16,7 +16,7 @@ $ python show.py 'SIZE'.fig.pickle
 ```
 
 ### Continue mode
-During long-term calculations of large matrices, it is possible to interrupt the process
+During long-term calculations, it is possible to interrupt the process
 and continue from the last state using the parameter 'continue':
 ```sh
 $ ./lab4 continue
