@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include <string.h>
 
+int file_size;
+
 struct FileMapping {
     int fd;
     size_t fsize;
@@ -76,6 +78,7 @@ FileMapping* mmap_create(const char* fname, size_t size1, size_t size2, bool rew
         close(fd);
     }
     size_t fsize = (size_t)st.st_size;
+    file_size = fsize;
     if ((int)(fsize / 1024)) {
         if ((int)(fsize / 1024 / 1024 / 1024)) {
             printf(" -> ans.txt size = %zu GB\n", fsize / 1024 / 1024 / 1024);
@@ -111,6 +114,20 @@ int main(int argc, char* argv[]) {
     a = b = 1;
     N = M = argc > 1 ? atoi(argv[1]) - 1 : 99;
     double eps = 1e-4;
+
+    // mmap for u_curr
+    bool rewrite = argc > 1 && !strcmp(argv[1], "continue") ? false : true;
+    if (!rewrite) {
+        printf("Continue mode\n");
+    }
+
+    const char* fname_u = "ans.txt";
+    FileMapping* u = mmap_create(fname_u, N + 1, M + 1, rewrite);
+
+    if (argc > 1 && !strcmp(argv[1], "continue")) {
+        N = M = (int)std::sqrt(file_size / 8) - 1;
+        std::cout << "N = " << N << "\n";
+    }
 
     // writing N, M to size.txt
     FILE *file = fopen("size.txt","wb");
@@ -149,14 +166,6 @@ int main(int argc, char* argv[]) {
     fwrite(xi, sizeof(double), N + 1, file);
     fwrite(yi, sizeof(double), M + 1, file);
     fclose(file);
-
-    // mmap for u_curr
-    bool rewrite = argc > 2 && !strcmp(argv[2], "continue") ? false : true;
-    if (!rewrite) {
-        printf("Continue mode\n");
-    }
-    const char* fname_u = "ans.txt";
-    FileMapping* u = mmap_create(fname_u, N + 1, M + 1, rewrite);
 
     // boundary condition u(x, 0)
     for (int i = 0; i < N + 1; ++i) {
