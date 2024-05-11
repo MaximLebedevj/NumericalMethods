@@ -44,7 +44,7 @@ surf = ax.plot_surface(X, Y, ans.T, cmap=cm.magma, alpha=1, label='Числен�
 fig.colorbar(surf, shrink=1, aspect=20)
 plt.grid(True)
 
-pickle.dump(fig, open('FigureObject.fig.pickle', 'wb'))
+pickle.dump(fig, open('%s.fig.pickle' %N, 'wb'))
 plt.close("all")
 
 # deleting all created temporary files
