@@ -3,6 +3,7 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 import struct
 import os
+import pickle
 
 
 # reading N and M
@@ -42,8 +43,9 @@ ax = fig.add_subplot(122, projection='3d')
 surf = ax.plot_surface(X, Y, ans.T, cmap=cm.magma, alpha=1, label='Численное решение')
 fig.colorbar(surf, shrink=1, aspect=20)
 plt.grid(True)
-plt.show()
 
+pickle.dump(fig, open('FigureObject.fig.pickle', 'wb'))
+plt.close("all")
 
 # deleting all created temporary files
 os.remove("size.txt")
