@@ -21,7 +21,7 @@ f.close()
 
 
 # reading answer
-f = open("curr.txt", mode="rb")
+f = open("ans.txt", mode="rb")
 ans = np.array(struct.unpack(('d'* N * M), f.read(8 * N * M)))
 ans = np.reshape(ans, (-1, M))
 f.close()
@@ -48,8 +48,7 @@ plt.show()
 # deleting all created temporary files
 os.remove("size.txt")
 os.remove("steps.txt")
-os.remove("curr.txt")
-os.remove("prev.txt")
+os.remove("ans.txt")
 
 
 
