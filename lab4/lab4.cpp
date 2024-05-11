@@ -1,4 +1,5 @@
 #include <math.h>
+#include <iostream>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -18,7 +19,12 @@ double phi(double x, double y) {
 void fill_file(const char* fname, size_t size1, size_t size2) {
     FILE* file = fopen(fname, "wb");
     double write_val = 0.0;
+    int progress = 1;
     for (int i = 0; i < size1; ++i) {
+        if (i == (int)(((size1) / 100)) * progress) {
+            progress += 1;
+            std::cout << "\rInitializing ans.txt : " << progress << "%" << std::flush;
+        }
         for (int j = 0; j < size2; ++j) {
             fprintf(file, "%lf", write_val);
         }
@@ -67,7 +73,20 @@ FileMapping* mmap_create(const char* fname, size_t size1, size_t size2) {
         close(fd);
     }
     size_t fsize = (size_t)st.st_size;
-    printf("fsize = %zu\n", fsize);
+    if ((int)(fsize / 1024)) {
+        if ((int)(fsize / 1024 / 1024 / 1024)) {
+            printf(" -> ans.txt size = %zu GB\n", fsize / 1024 / 1024 / 1024);
+        } 
+        else if ((int)(fsize / 1024 / 1024)) {
+            printf(" -> ans.txt size = %zu MB\n", fsize / 1024 / 1024);
+        }
+        else {
+            printf(" -> ans.txt size = %zu KB\n", fsize / 1024);
+        }
+    } 
+    else {
+        printf(" -> ans.txt size = %zu Bytes\n", fsize);
+    }
     double* dataPtr = mmap_(fd, fsize);
     FileMapping* mapping = mmap_malloc_(fd, fsize, dataPtr);
 
@@ -87,7 +106,7 @@ void mmap_free(FileMapping* mapping) {
 int main(int argc, char* argv[]) {
     int a, b, M, N;
     a = b = 1;
-    N = M = argc > 1 ? atoi(argv[1]) : 100;
+    N = M = argc > 1 ? atoi(argv[1]) - 1 : 99;
     double eps = 1e-4;
 
     // writing N, M to size.txt
@@ -165,7 +184,7 @@ int main(int argc, char* argv[]) {
                 max = diff > max ? diff : max;
             }
         }
-        printf("Max difference after %3d iterations: %f\n", iter, max);
+        std::cout << "\rMax difference after " << iter << " iterations: " << max << std::flush;
         if (max <= eps) {
             printf("\nConvergence achieved after %d iterations.\n", iter);
             break;
