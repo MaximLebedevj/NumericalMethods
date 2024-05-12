@@ -18,6 +18,7 @@ struct FileMapping {
 double phi(double x, double y) { return -x + 4 * pow(y, 2); }
 
 void fill_file(const char *fname, size_t size1, size_t size2) {
+    printf("initializing file with zeros\n");
     FILE *file = fopen(fname, "wb");
     double write_val = 0.0;
     int progress = 1;
@@ -35,6 +36,7 @@ void fill_file(const char *fname, size_t size1, size_t size2) {
 }
 
 int mmap_open_file_(const char *fname) {
+    printf("opening file ...\n");
     int fd = open(fname, O_RDWR, 0);
     if (fd < 0) {
         printf("fileMappingCreate - open failed\n");
@@ -43,6 +45,7 @@ int mmap_open_file_(const char *fname) {
 }
 
 double *mmap_(int fd, size_t fsize) {
+    printf("mmap file ...\n");
     double *dataPtr = (double *)mmap(nullptr, fsize, PROT_READ | PROT_WRITE,
                                      MAP_SHARED, fd, 0);
     if (dataPtr == MAP_FAILED) {
@@ -53,6 +56,7 @@ double *mmap_(int fd, size_t fsize) {
 }
 
 FileMapping *mmap_malloc_(int fd, size_t fsize, double *dataPtr) {
+    printf("malloc file ...\n");
     FileMapping *mapping = (FileMapping *)malloc(sizeof(FileMapping));
     if (mapping == nullptr) {
         printf("fileMappingCreate - malloc failed\n");
@@ -97,6 +101,8 @@ FileMapping *mmap_create(const char *fname, size_t size1, size_t size2,
     mapping->fd = fd;
     mapping->fsize = fsize;
     mapping->dataPtr = dataPtr;
+
+    printf("file is ready\n");
 
     return mapping;
 }
@@ -175,24 +181,26 @@ int main(int argc, char *argv[]) {
     fwrite(yi, sizeof(double), M + 1, file);
     fclose(file);
 
-    // boundary condition u(x, 0)
-    for (int i = 0; i < N + 1; ++i) {
-        u->dataPtr[i * (N + 1)] = phi(xi[i], 0);
-    }
+    if(rewrite) {
+        // boundary condition u(x, 0)
+        for (int i = 0; i < N + 1; ++i) {
+            u->dataPtr[i * (N + 1)] = phi(xi[i], 0);
+        }
 
-    // boundary condition u(x, M)
-    for (int i = 0; i < N + 1; ++i) {
-        u->dataPtr[(M + 1) * (i + 1) - 1] = phi(xi[i], yi[M]);
-    }
+        // boundary condition u(x, M)
+        for (int i = 0; i < N + 1; ++i) {
+            u->dataPtr[(M + 1) * (i + 1) - 1] = phi(xi[i], yi[M]);
+        }
 
-    // boundary condition u(0, y)
-    for (int j = 0; j < M + 1; ++j) {
-        u->dataPtr[j] = phi(0, yi[j]);
-    }
+        // boundary condition u(0, y)
+        for (int j = 0; j < M + 1; ++j) {
+            u->dataPtr[j] = phi(0, yi[j]);
+        }
 
-    // boundary condition u(N, y)
-    for (int j = 0; j < M + 1; ++j) {
-        u->dataPtr[j + (M + 1) * N] = phi(xi[N], yi[j]);
+        // boundary condition u(N, y)
+        for (int j = 0; j < M + 1; ++j) {
+            u->dataPtr[j + (M + 1) * N] = phi(xi[N], yi[j]);
+        }
     }
 
     double max, tmp, diff;
