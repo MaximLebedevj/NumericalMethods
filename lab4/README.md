@@ -19,5 +19,7 @@ $ python show.py 'SIZE'.fig.pickle
 During long-term calculations, it is possible to interrupt the process
 and continue from the last state using the parameter 'continue':
 ```sh
-$ ./lab4 continue
+$ ./lab4 continue 'ITER_TO_ASK'
 ```
+where 'ITER_TO_ASK' is an optional parameter with
+which after each 'ITER_TO_ASK' iteration it will be asked whether we want to interrupt the process.
