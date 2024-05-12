@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
     N = M = argc > 1 ? atoi(argv[1]) - 1 : 99;
     double eps = 1e-4;
 
-    int ask_iter;
+    int ask_iter = 0;
     if (argc > 2) {
         ask_iter = atoi(argv[2]);
     }
@@ -124,8 +124,13 @@ int main(int argc, char* argv[]) {
     // mmap for u_curr
     bool rewrite = argc > 1 && !strcmp(argv[1], "continue") ? false : true;
     if (!rewrite) {
-        printf("Continue mode\n");
+        printf("Continue mode");
     }
+
+    if (ask_iter) {
+        printf(", ask_iter = %d", ask_iter);
+    }
+    printf("\n");
 
     const char* fname_u = "ans.txt";
     FileMapping* u = mmap_create(fname_u, N + 1, M + 1, rewrite);
@@ -211,8 +216,8 @@ int main(int argc, char* argv[]) {
                 max = diff > max ? diff : max;
             }
         }
-        std::cout << " -> max difference after " << iter << " iterations: " << max << std::flush;
 
+        std::string ask_interrupt = "";
         if (argc > 2 && (iter % ask_iter) == 0) {
 
             fd_set fds;
@@ -223,7 +228,7 @@ int main(int argc, char* argv[]) {
             timeout.tv_sec = 1;   // A second timeout
             timeout.tv_usec = 0;
 
-            std::cout << " -- > Press Enter to stop" << std::flush;
+            ask_interrupt = " -- > Press Enter to stop";
             int rc = select(STDIN_FILENO + 1, &fds, nullptr, nullptr, &timeout);
             if (rc < 0)
             {
@@ -234,6 +239,9 @@ int main(int argc, char* argv[]) {
                 return 0;
             }
         }
+
+        std::cout << " -> max difference after " << iter << " iterations: " << max 
+                  << " " << ask_interrupt << std::flush;
 
         if (max <= eps) {
             printf("\n\nConvergence achieved\n");
