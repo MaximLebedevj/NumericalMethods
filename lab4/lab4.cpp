@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <string.h>
 
-int file_size;
+unsigned long long file_size;
 
 struct FileMapping {
     int fd;
@@ -110,10 +110,13 @@ void mmap_free(FileMapping* mapping) {
 }
 
 int main(int argc, char* argv[]) {
-    int a, b, M, N;
+    int a, b;
+    unsigned long long N, M;
     a = b = 1;
     N = M = argc > 1 ? atoi(argv[1]) - 1 : 99;
     double eps = 1e-4;
+
+    int ask_iter;
 
     // mmap for u_curr
     bool rewrite = argc > 1 && !strcmp(argv[1], "continue") ? false : true;
@@ -125,7 +128,10 @@ int main(int argc, char* argv[]) {
     FileMapping* u = mmap_create(fname_u, N + 1, M + 1, rewrite);
 
     if (argc > 1 && !strcmp(argv[1], "continue")) {
-        N = M = (int)std::sqrt(file_size / 8) - 1;
+        N = M = (unsigned long long)std::sqrt(file_size / 8) - 1;
+        if (argc > 2) {
+           ask_iter = atoi(argv[2]); 
+        }
     }
 
     // writing N, M to size.txt
@@ -206,6 +212,29 @@ int main(int argc, char* argv[]) {
             }
         }
         std::cout << " -> max difference after " << iter << " iterations: " << max << std::flush;
+
+        if (argc > 2 && (iter % ask_iter) == 0) {
+
+            fd_set fds;
+            FD_ZERO(&fds);
+            FD_SET(STDIN_FILENO, &fds);
+
+            timeval timeout;
+            timeout.tv_sec = 1;   // A second timeout
+            timeout.tv_usec = 0;
+
+            std::cout << " -- > Press Enter to stop" << std::flush;
+            int rc = select(STDIN_FILENO + 1, &fds, nullptr, nullptr, &timeout);
+            if (rc < 0)
+            {
+                perror("select");
+            }
+            else if (rc != 0)
+            {
+                return 0;
+            }
+        }
+
         if (max <= eps) {
             printf("\n\nConvergence achieved\n");
             printf("-> run 'python plot.py' to save plot\n");
