@@ -117,6 +117,9 @@ int main(int argc, char* argv[]) {
     double eps = 1e-4;
 
     int ask_iter;
+    if (argc > 2) {
+        ask_iter = atoi(argv[2]);
+    }
 
     // mmap for u_curr
     bool rewrite = argc > 1 && !strcmp(argv[1], "continue") ? false : true;
@@ -129,9 +132,6 @@ int main(int argc, char* argv[]) {
 
     if (argc > 1 && !strcmp(argv[1], "continue")) {
         N = M = (unsigned long long)std::sqrt(file_size / 8) - 1;
-        if (argc > 2) {
-           ask_iter = atoi(argv[2]); 
-        }
     }
 
     // writing N, M to size.txt
