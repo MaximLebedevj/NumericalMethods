@@ -18,7 +18,7 @@ where 'ITER_TO_ASK' is an optional parameter with
 which after each 'ITER_TO_ASK' iteration it will be asked for 1 second 
 whether we want to interrupt the process.
 
-### RAM and mmap mode
+### RAM and mmap modes
 There are two modes: <br />
 1). RAM mode - all calculations are performed in RAM -> the amount of RAM limits the maximum matrix size that can be calculated. <br />
 2). mmap mode - all calcualtions are performed in storage devices (HDD, SSD) -> the maximum matrix size is limited by storage device 
