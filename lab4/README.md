@@ -22,7 +22,7 @@ whether we want to interrupt the process.
 There are two modes: <br />
 1). RAM mode - all calculations are performed in RAM -> the amount of RAM limits the maximum matrix size that can be calculated. <br />
 2). mmap mode - all calcualtions are performed in storage devices (HDD, SSD) -> the maximum matrix size is limited by storage device 
-capacity. ATTENTION: due to frequent overwriting of the ans.txt file, mmap mode can quickly reduce write cycle of storage device.
+capacity. <br /> ATTENTION: due to frequent overwriting of the ans.txt file, mmap mode can quickly reduce write cycle of storage device.
 
 ### Continue mode
 During long-term calculations, it is possible to interrupt the process
