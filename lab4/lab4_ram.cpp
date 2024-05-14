@@ -107,15 +107,36 @@ void mmap_free(FileMapping *mapping) {
     free(mapping);
 }
 
-void write_to_file(double *u, FileMapping* file, unsigned long long N, unsigned long long M) {
+void write_to_file(double *u, FileMapping* file, unsigned long long N, unsigned long long M, bool is_finished) {
+
+    if (is_finished) {
+        printf("\n\n");
+    } else {
+        printf("\n");
+    }
+
+    std::string finish_str = is_finished ? "Convergence achieved -> " : ""; 
+    int progress = 1;
     for (int i = 0; i < N + 1; ++i) {
+	if (i == (int)(((N + 1) / 100)) * progress) {
+            progress += 1;
+            std::cout << "\r" << finish_str << "Writing result to ans.txt : " << progress << "%"
+                      << std::flush;
+        }
         for (int j = 0; j < M + 1; ++j) {
             file->dataPtr[j + i * (M + 1)] = u[j + i * (M + 1)];
         }
     }
+
+    if (is_finished) {
+        printf("\n");
+    } else {
+        printf("\n\n");
+    }
 }
 
 int main(int argc, const char *argv[]) {
+
     int a, b;
     unsigned long long N, M;
     a = b = 1;
@@ -128,15 +149,15 @@ int main(int argc, const char *argv[]) {
     }
 
     // mmap for u_curr
+    printf("\nRAM mode\n\n");
     bool rewrite = argc > 1 && !strcmp(argv[1], "continue") ? false : true;
     if (!rewrite) {
         printf("Continue mode");
     }
 
     if (ask_iter) {
-        printf(", ask_iter = %d", ask_iter);
+        printf(", ask_iter = %d\n", ask_iter);
     }
-    printf("\n");
 
     const char *fname_u = "ans.txt";
     FileMapping *file_ans = mmap_create(fname_u, N + 1, M + 1, rewrite);
@@ -159,6 +180,7 @@ int main(int argc, const char *argv[]) {
     } else {
         printf(" -> %zu Bytes was alloacted\n", u_size);
     }
+
     if (!rewrite) {
         int progress = 1;
         for (int i = 0; i < N + 1; ++i) {
@@ -250,6 +272,7 @@ int main(int argc, const char *argv[]) {
     double max, tmp, diff;
     int progress = 1;
     int iter = 0;
+    bool is_finished = false;
     while (true) {
         max = -1.0;
         progress = 1;
@@ -288,7 +311,7 @@ int main(int argc, const char *argv[]) {
             if (rc < 0) {
                 perror("select");
             } else if (rc != 0) {
-                write_to_file(u, file_ans, N, M);
+                write_to_file(u, file_ans, N, M, is_finished);
                 return 0;
             }
         }
@@ -298,14 +321,13 @@ int main(int argc, const char *argv[]) {
                   << std::flush;
 
         if (max <= eps) {
-            printf("\n\nConvergence achieved\n");
-            printf("-> run 'python plot.py' to save plot\n");
+	    is_finished = true;
+            write_to_file(u, file_ans, N, M, is_finished);
+            printf("\n-> run 'python plot.py' to save plot\n");
             printf("-> run 'python show.py' SIZE.fig.pickle to show the plot\n\n");
             break;
         }
     }
-
-    write_to_file(u, file_ans, N, M);
 
     free(xi);
     free(yi);
