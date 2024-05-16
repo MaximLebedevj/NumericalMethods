@@ -39,6 +39,10 @@ def u(ci, x_):
     return (phi0.subs(x, x_).evalf() + sigma).evalf()
 
 
+def exact(x_):
+    return 2 / 3 * (x_ + 1)**(3 / 2)
+
+
 a = 0
 b = 1
 
@@ -53,7 +57,8 @@ j = sp.symbols('j', cls=sp.Idx)
 
 x = sp.Symbol('x')
 k = sp.Symbol('k')
-n = 2
+
+n = 2  # TODO
 
 p = p(sp.Symbol('x'))
 print(p)
@@ -86,7 +91,7 @@ sigma2 = C_k[0] * phik.subs(k, 1) + C_k[1] * phik.subs(k, 2)  # TODO
 print("sigma2 = ", sigma2)
 
 systemCi = []
-for i in range(1, 3):
+for i in range(1, n + 1):
     systemCi.append(sp.simplify(sp.integrate(2 * p * (phi0_df + sigma1) * phik_df.subs(k, i) -
                                              2 * q * (phi0 + sigma2) * phik.subs(k, 1) + 2 * f * phik.subs(k, i),
                                              (x, a, b))).evalf())
@@ -103,17 +108,21 @@ C_linsolve = sp.linsolve(system, C_k[0], C_k[1])  # TODO
 C = list(C_linsolve)[0]
 
 print(C)
-u_res = []
+u_numeric = []
 for i in range(N + 1):
-    u_res.append(u(C, xi[i]))
-print(u_res)
+    u_numeric.append(u(C, xi[i]))
+print(u_numeric)
+
+u_exact = []
+for i in range(N + 1):
+    u_exact.append(exact(xi[i]))
 
 
 plt.figure(figsize=(15, 7))
 sp = plt.subplot(121)
 
-plt.plot(xi, u_res, 'k')
-
+plt.plot(xi, u_numeric, 'k')
+plt.plot(xi, u_exact, 'red')
 plt.grid(True)
 plt.show()
 
