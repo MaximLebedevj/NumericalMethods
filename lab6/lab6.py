@@ -37,11 +37,11 @@ def phi0_df(x):
 
 
 def phik(k, x):
-    return 1 / (k + 1) * x**(k + 1) - x - 1 / 3
+    return 1 / (k + 1) * x ** (k + 1) - x - 1 / 3
 
 
 def phik_df(k, x):
-    return x**k -1
+    return x ** k - 1
 
 
 def u(ci, x_):
@@ -52,7 +52,7 @@ def u(ci, x_):
 
 
 def exact(x_):
-    return 2 / 3 * (x_ + 1)**(3 / 2)
+    return 2 / 3 * (x_ + 1) ** (3 / 2)
 
 
 a = 0
@@ -76,7 +76,7 @@ phik = phik(sp.Symbol('k'), sp.Symbol('x'))
 phik_df = phik_df(sp.Symbol('k'), sp.Symbol('x'))
 
 # Задаем количество C_k
-n = 5
+n = 2
 C_k = [C[j] for j in range(0, n)]
 print(C_k)
 
@@ -100,7 +100,7 @@ print("sigma2 = ", sigma2)
 systemCi = []
 for i in range(1, n + 1):
     systemCi.append(sp.simplify(sp.integrate(2 * p * (phi0_df + sigma1) * phik_df.subs(k, i) -
-                                             2 * q * (phi0 + sigma2) * phik.subs(k, 1) + 2 * f * phik.subs(k, i),
+                                             2 * q * (phi0 + sigma2) * phik.subs(k, i) + 2 * f * phik.subs(k, i),
                                              (x, a, b))).evalf())
 
 for i in range(len(systemCi)):
@@ -128,7 +128,6 @@ for i in range(N + 1):
     u_exact.append(exact(xi[i]))
 print("u_exact: ", u_exact)
 
-
 # Визуализация
 plt.figure(figsize=(15, 7))
 sp = plt.subplot(121)
@@ -138,5 +137,3 @@ plt.plot(xi, u_exact, 'red')
 
 plt.grid(True)
 plt.show()
-
-
