@@ -1,11 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import math
 import sympy as sp
-
-
-def F(x_):
-    return 2 / sp.sqrt(x_ + 1)
 
 
 def P(x_):
@@ -14,6 +9,10 @@ def P(x_):
 
 def Q(x_):
     return 0
+
+
+def F(x_):
+    return 2 / sp.sqrt(x_ + 1)
 
 
 def p(x_):
@@ -62,42 +61,39 @@ N = 10
 
 x = sp.Symbol('x')
 k = sp.Symbol('k')
+C = sp.IndexedBase('C')
+j = sp.symbols('j', cls=sp.Idx)
 
-q = q(sp.Symbol('x'))
 f = f(sp.Symbol('x'))
+q = q(sp.Symbol('x'))
 p = p(sp.Symbol('x'))
 
 xi = np.linspace(a, b, N + 1)
 
-C = sp.IndexedBase('C')
-j = sp.symbols('j', cls=sp.Idx)
-
-
 phi0 = phi0(sp.Symbol('x'))
-print("phi0 = ", phi0)
-
 phi0_df = phi0_df(sp.Symbol('x'))
-print("phi0_df = ", phi0_df)
-
 phik = phik(sp.Symbol('k'), sp.Symbol('x'))
-print("phik = ", phik)
-
 phik_df = phik_df(sp.Symbol('k'), sp.Symbol('x'))
-print("phik_df = ", phik_df)
 
-
-n = 2  # TODO 10
 # Задаем количество C_k
+n = 5
 C_k = [C[j] for j in range(0, n)]
 print(C_k)
 
-# TODO
-sigma1 = C_k[0] * phik_df.subs(k, 1) + C_k[1] * phik_df.subs(k, 2)
-
+sigma_str = ""
+for i in range(0, n):
+    sigma_str += str(C_k[i] * phik_df.subs(k, i + 1))
+    if i != n - 1:
+        sigma_str += " + "
+sigma1 = eval(sigma_str)
 print("sigma1 = ", sigma1)
 
-# TODO
-sigma2 = C_k[0] * phik.subs(k, 1) + C_k[1] * phik.subs(k, 2)
+sigma_str = ""
+for i in range(0, n):
+    sigma_str += str(C_k[i] * phik.subs(k, i + 1))
+    if i != n - 1:
+        sigma_str += " + "
+sigma2 = eval(sigma_str)
 print("sigma2 = ", sigma2)
 
 # Считаем значения dФ / dC_i
@@ -115,15 +111,18 @@ for i in range(len(systemCi)):
     system.append(systemCi[i])
 print(system)
 
-C_linsolve = sp.linsolve(system, C_k[0], C_k[1])  # TODO
+# Решение получившейся системы
+C_linsolve = sp.linsolve(system, [C_k[i] for i in range(0, n)])
 C = list(C_linsolve)[0]
 print("C_i values: ", C)
 
+# Численное решение
 u_numeric = []
 for i in range(N + 1):
     u_numeric.append(u(C, xi[i]))
 print("u_numeric: ", u_numeric)
 
+# Точное решение
 u_exact = []
 for i in range(N + 1):
     u_exact.append(exact(xi[i]))
