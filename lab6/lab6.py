@@ -37,11 +37,11 @@ def phi0_df(x):
 
 
 def phik(k, x):
-    return (1 / 2 * k) * x ** (2 * k) - x - 1 / 3
+    return 1 / (k + 1) * x ** (k + 1) - x - 1 / 3
 
 
 def phik_df(k, x):
-    return x ** (2 * k - 1) - 1
+    return x ** k - 1
 
 
 def u(ci, x_):
@@ -55,7 +55,7 @@ def exact(x_):
     return 2 / 3 * (x_ + 1) ** (3 / 2)
 
 
-n = 2
+n = 10
 a = 0
 b = 1
 N = 10
