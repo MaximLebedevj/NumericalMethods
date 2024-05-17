@@ -37,11 +37,11 @@ def phi0_df(x):
 
 
 def phik(k, x):
-    return 1 / (k + 1) * x ** (k + 1) - x - 1 / 3
+    return (1 / 2 * k) * x ** (2 * k) - x - 1 / 3
 
 
 def phik_df(k, x):
-    return x ** k - 1
+    return x ** (2 * k - 1) - 1
 
 
 def u(ci, x_):
@@ -55,9 +55,11 @@ def exact(x_):
     return 2 / 3 * (x_ + 1) ** (3 / 2)
 
 
+n = 2
 a = 0
 b = 1
 N = 10
+
 
 x = sp.Symbol('x')
 k = sp.Symbol('k')
@@ -76,7 +78,6 @@ phik = phik(sp.Symbol('k'), sp.Symbol('x'))
 phik_df = phik_df(sp.Symbol('k'), sp.Symbol('x'))
 
 # Задаем количество C_k
-n = 2
 C_k = [C[j] for j in range(0, n)]
 print(C_k)
 
@@ -132,8 +133,9 @@ print("u_exact: ", u_exact)
 plt.figure(figsize=(15, 7))
 sp = plt.subplot(121)
 
-plt.plot(xi, u_numeric, 'k')
-plt.plot(xi, u_exact, 'red')
+plt.plot(xi, u_numeric, 'k', label="Численное")
+plt.plot(xi, u_exact, 'red', label="Точное")
 
+plt.legend()
 plt.grid(True)
 plt.show()
