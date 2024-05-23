@@ -23,7 +23,8 @@ f.close()
 
 # reading answer
 f = open("ans.txt", mode="rb")
-ans = np.array(struct.unpack(('d'* N * M), f.read(8 * N * M)))
+#ans = np.array(struct.unpack(('d'* N * M), f.read(8 * N * M)))
+ans = np.fromfile(f, dtype=np.float64)
 ans = np.reshape(ans, (-1, M))
 f.close()
 
@@ -48,9 +49,9 @@ pickle.dump(fig, open('%s.fig.pickle' %N, 'wb'))
 plt.close("all")
 
 # deleting all created temporary files
-os.remove("size.txt")
-os.remove("steps.txt")
-os.remove("ans.txt")
+# os.remove("size.txt")
+# os.remove("steps.txt")
+# os.remove("ans.txt")
 
 
 
