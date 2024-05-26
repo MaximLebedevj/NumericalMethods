@@ -1,5 +1,6 @@
 ## Run lab entirely written in Python
 ```sh
+$ cd python/
 $ pip install pipenv
 $ pipenv install
 $ python lab4.py
@@ -7,6 +8,7 @@ $ python lab4.py
 
 ## Run lab with C++ calculations and Python visualization
 ```sh
+$ cd cpp_python/
 $ pip install pipenv
 $ pipenv install
 $ g++ lab4_ram.cpp (lab4_mmap.cpp) -march=native -mtune=native -m64 -O3 -ffast-math -funroll-loops -o lab4 
@@ -29,4 +31,13 @@ During long-term calculations, it is possible to interrupt the process
 and continue from the last state using the parameter 'continue':
 ```sh
 $ ./lab4 continue 'ITER_TO_ASK'
+```
+
+## Run pure C++ version
+``` sh
+$ cd cpp/
+$ mkdir bin && cd bin/
+$ cmake ../
+$ make && ./lab4 [OPTIONS]
+
 ```
