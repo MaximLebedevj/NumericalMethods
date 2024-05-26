@@ -4,20 +4,19 @@ import sympy as sp
 
 
 def P(x_):
-    return 3 / (2 * (x_ + 1))
+    return 1/2 / (x_ + 1)
 
 
 def Q(x_):
-    return 0
+    return -1
 
 
 def F(x_):
-    return 2 / sp.sqrt(x_ + 1)
+    return - 1 * sp.sqrt(x_ + 1)
 
 
 def p(x_):
-    x = sp.Symbol('x')
-    return sp.exp(sp.integrate(P(x_), x))
+    return sp.sqrt(x_ + 1)
 
 
 def q(x):
@@ -29,19 +28,19 @@ def f(x):
 
 
 def phi0(x):
-    return (1 / sp.sqrt(2)) * x ** 2 + 1 / 3
+    return (sp.sqrt(2) - 1) * x + 1
 
 
 def phi0_df(x):
-    return sp.sqrt(2) * x
+    return (sp.sqrt(2) - 1)
 
 
 def phik(k, x):
-    return 1 / (k + 1) * x ** (k + 1) - x - 1 / 3
+    return x**k * (1 - x)
 
 
 def phik_df(k, x):
-    return x ** k - 1
+    return k * x**(k-1) * (1 - x) - x**k
 
 
 def u(ci, x_):
@@ -52,13 +51,14 @@ def u(ci, x_):
 
 
 def exact(x_):
-    return 2 / 3 * (x_ + 1) ** (3 / 2)
+    return np.sqrt(x_ + 1)
 
 
-n = 10
+# Количество C
+n = 5
 a = 0
 b = 1
-N = 10
+N = 50
 
 
 x = sp.Symbol('x')
