@@ -153,10 +153,13 @@ int main(int argc, const char *argv[]) {
     bool rewrite = argc > 1 && !strcmp(argv[1], "continue") ? false : true;
     if (!rewrite) {
         printf("Continue mode");
+        if (ask_iter) {
+            printf(", ");
+        }
     }
 
     if (ask_iter) {
-        printf(", ask_iter = %d\n", ask_iter);
+        printf("Ask_iter = %d\n", ask_iter);
     }
 
     const char *fname_u = "ans.txt";
