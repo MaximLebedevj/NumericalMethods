@@ -3,15 +3,15 @@ import numpy as np
 import sympy as sp
 
 
-def P(x_):
+def p(x_):
     return 1 / 2 / (x_ + 1)
 
 
-def Q(x_):
+def q(x_):
     return -1
 
 
-def F(x_):
+def f(x_):
     return - 1 * sp.sqrt(x_ + 1)
 
 
@@ -43,7 +43,7 @@ def exact(x_):
 
 
 def equation(u):
-    return sp.diff(u, x, 2) + P * sp.diff(u, x, 1) + Q * u - F
+    return sp.diff(u, x, 2) + p * sp.diff(u, x, 1) + q * u - f
 
 
 def phi_i(i, x, h, xi):
@@ -58,10 +58,13 @@ def phi_i(i, x, h, xi):
 # Параметры 
 # n - кол-во Ck
 # N - ков-во разбиений
+
+gamma1, gamma2 = 1, 2
+
 n = 1
 a = 0
 b = 1
-N = 20
+N = 19
 
 x = sp.Symbol('x')
 k = sp.Symbol('k')
@@ -69,19 +72,43 @@ C = sp.IndexedBase('C')
 j = sp.symbols('j', cls=sp.Idx)
 u = sp.Symbol('u')
 
-F = F(sp.Symbol('x'))
-Q = Q(sp.Symbol('x'))
-P = P(sp.Symbol('x'))
+f = f(sp.Symbol('x'))
+q = q(sp.Symbol('x'))
+p = p(sp.Symbol('x'))
 
-xi = np.linspace(a, b, N + 1)
-h = (b - a) / (N)
+
+# Сводим неоднородную задачу к однородной
+v = gamma1 + (gamma2 - gamma1) / (b - a) * (x - a)
+v_df = sp.diff(v, x)
+
+F = f - p * v_df - q * v
+print("F = ", F)
+
+
+# Задаем сетку xi с шагом h
+xi = []
+h = (b - a) / (N + 1)
 print("h = ", h) 
+
+xi.append(a + 0 * h)
+for i in range(1, N + 1):
+    xi.append(a + i * h)
+xi.append(a + (N + 1) * h)
+
 print("xi = ", xi) 
 
-print("\nphi0    = ", phi0(x))
-print("phi0_df = ", phi0_df(x))
-print("phik    =", phik(k, x))
-print("phik_df =", phik_df(k, x))
+
+
+
+
+
+
+
+
+#print("\nphi0    = ", phi0(x))
+#print("phi0_df = ", phi0_df(x))
+#print("phik    =", phik(k, x))
+#print("phik_df =", phik_df(k, x))
 
 # Задаем количество C_k
 #C_k = [C[j] for j in range(0, n)]
