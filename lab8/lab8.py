@@ -15,56 +15,36 @@ def f(x_):
     return - 1 * sp.sqrt(x_ + 1)
 
 
-def phi0(x):
-    return (sp.sqrt(2) - 1) * x + 1
-
-
-def phi0_df(x):
-    return (sp.sqrt(2) - 1)
-
-
-def phik(k, x):
-    return x**k * (1 - x)
-
-
-def phik_df(k, x):
-    return k * x**(k-1) * (1 - x) - x**k
-
-
-def numerical(ci, x_):
-    sigma = 0.0
-    for i in range(len(ci)):
-        sigma += ci[i] * (phik(k, x).subs({k: i + 1, x: x_}).evalf())
-    return (phi0(x).subs(x, x_).evalf() + sigma).evalf()
-
-
 def exact(x_):
     return np.sqrt(x_ + 1)
 
 
-def equation(u):
-    return sp.diff(u, x, 2) + p * sp.diff(u, x, 1) + q * u - f
-
-
 def phi_i(i, x, h, xi):
     if x >= xi[i - 1] and x <= xi[i]:
-        return (x - xi[i - 1]) / h 
-    elif x >= xi[i] and x <= x[i + 1]:
+        return (x - xi[i - 1]) / h
+    elif x >= xi[i] and x <= xi[i + 1]:
         return -(x - xi[i + 1]) / h
     else:
         return 0
 
 
-# Параметры 
+def numerical(ci, x_, v):
+    sigma = 0.0
+    for i in range(len(ci)):
+        sigma += ci[i] * phi_i(i, x_, h, xi)
+    return sigma + v.subs(x, x_)
+
+
+# Параметры
 # n - кол-во Ck
 # N - ков-во разбиений
 
-gamma1, gamma2 = 1, 2
+gamma1, gamma2 = 0.5, np.sqrt(2)
 
-n = 1
+n = 5
 a = 0
 b = 1
-N = 19
+N = 9
 
 x = sp.Symbol('x')
 k = sp.Symbol('k')
@@ -88,92 +68,99 @@ print("F = ", F)
 # Задаем сетку xi с шагом h
 xi = []
 h = (b - a) / (N + 1)
-print("h = ", h) 
+print("h = ", h)
 
 xi.append(a + 0 * h)
 for i in range(1, N + 1):
     xi.append(a + i * h)
 xi.append(a + (N + 1) * h)
 
-print("xi = ", xi) 
+print("xi = ", xi)
 
-
-
-
-
-
-
-
-
-#print("\nphi0    = ", phi0(x))
-#print("phi0_df = ", phi0_df(x))
-#print("phik    =", phik(k, x))
-#print("phik_df =", phik_df(k, x))
 
 # Задаем количество C_k
-#C_k = [C[j] for j in range(0, n)]
-#print("\nC_k = ", C_k)
+C_k = [C[j] for j in range(0, n)]
+print("\nC_k = ", C_k)
 
-#sigma_str = ""
-#for i in range(0, n):
-    #    sigma_str += str(C_k[i] * phik(k, x).subs(k, i + 1))
-#    if i != n - 1:
-        #        sigma_str += " + "
-#sigma_phik = eval(sigma_str)
-#print("sigma_phik = ", sigma_phik)  
 
-# Решение u в виде(4)
-#ux = phi0(x) + sigma_phik
-#print("\nu(x) = ", ux)
+# Составляем СЛАУ
+A = np.array([[0 for x in range(n+1)] for y in range(n)])
+for i in range(n):
+    for j in range(n):
+        A[i][i] = (-2 / h) + (1 / h**2) * \
+                (sp.integrate(p * (x - xi[i-1]), (x, xi[i-1], xi[i])) + 
+                 sp.integrate(q * (x - xi[i-1])**2, (x, xi[i-1], xi[i])) + 
+                 sp.integrate(p * (x - xi[i+1]), (x, xi[i], xi[i+1])) + 
+                 sp.integrate(q * (x - xi[i+1])**2, (x, xi[i], xi[i+1])))
 
-# R(x, C1, ..., Cn)
-#R = equation(ux)
-#print("\nR(x, C1, ..., Cn) = ", R)
+        if j == i + 1:
+            A[i][j] = (1 / h) - (1 / h**2) * \
+                    (sp.integrate(p * (x - xi[i+1]), (x, xi[i], xi[i+1])) + 
+                     sp.integrate(q * (x - xi[i]) * (x - xi[i+1]), (x, xi[i], xi[i+1])))
 
-# СЛАУ 
-#systemCi = []
-#for i in range(1, n + 1):
-    #    systemCi.append(sp.simplify(sp.integrate(phik(k, x).subs(k, i) * R, (x, a, b))).evalf())
-#print("\nsystemCi =", systemCi)
+        if j == i - 1:
+            A[i][j] = (1 / h) - (1 / h**2) * \
+                    (sp.integrate(p * (x - xi[i-1]), (x, xi[i-1], xi[i])) +
+                     sp.integrate(q * (x - xi[i-1]) * (x - xi[i]), (x, xi[i-1], xi[i])))
 
-# Решение СЛАУ
-#systemCi_sol = list(sp.linsolve(systemCi, [C_k[i] for i in range(0, n)]))[0]
+# Правая часть
+d = np.array([0 for x in range(n)])
+for i in range(n):
+    d[i] = (1 / h) * \
+           (sp.integrate(F * (x - xi[i-1]), (x, xi[i-1], xi[i])) +
+            sp.integrate(F * (x - xi[i+1]), (x, xi[i], xi[i+1]))) 
 
-#print()
-#for i in range(0, n):
-    #    print("C{0}".format(i) ," = ", systemCi_sol[i])
+for i in range(n):
+    A[i][n] = d[i]
+print("A = ", A)
 
-# Численное решение
-#u_numerical = []
-#for i in range(N + 1):
-    #    u_numerical.append(numerical(systemCi_sol, xi[i]))
-#print("\nu_numerical: ", u_numerical)
+
+# Решаем СЛАУ, находим Ci
+if n > 1:
+    lines = []
+    for i in range(n):
+        lines.append(A[i])
+    print("lines = ", lines)
+    Ci = sp.linsolve(sp.Matrix((lines))).args[0]
+else:
+    Ci = []
+    Ci.append(A[0][1] / A[0][0])
+print("Ci = ", Ci)
+
+# Численное решение 
+u_numerical = []
+for i in range(len(xi)):
+    u_numerical.append(numerical(Ci, xi[i], v))
+print("u_numerical = ", u_numerical)
+
 
 # Точное решение
-#u_exact = []
-#for i in range(N + 1):
-    #    u_exact.append(exact(xi[i]))
-#print("\nu_exact: ", u_exact)
+u_exact = []
+for i in range(len(xi)):
+    u_exact.append(exact(xi[i]))
+print("\nu_exact: ", u_exact)
+
 
 # Невязка
-#error = []
-#for i in range(N + 1):
-    #    error.append(abs(u_exact[i] - u_numerical[i]))
-#print("\nerror : ", error)
+error = []
+for i in range(len(xi)):
+   error.append(abs(u_exact[i] - u_numerical[i]))
+print("\nerror : ", error)
+
 
 # Визуализация
-#plt.figure(figsize=(15, 7))
-#sp = plt.subplot(121)
+plt.figure(figsize=(15, 7))
+sp = plt.subplot(121)
 
-#plt.plot(xi, u_numerical, 'k', label="Численное")
-#plt.plot(xi, u_exact, 'red', label="Точное")
-#plt.legend()
-#plt.grid(True)
+plt.plot(xi, u_numerical, 'k', label="Численное")
+plt.plot(xi, u_exact, 'red', label="Точное")
+plt.legend()
+plt.grid(True)
 
-#sp = plt.subplot(122)
-#plt.plot(xi, error, 'black')
-#plt.plot(xi, error, 'bo', label="Погрешность")
+sp = plt.subplot(122)
+plt.plot(xi, error, 'black')
+plt.plot(xi, error, 'bo', label="Погрешность")
 
-#plt.legend()
-#plt.grid(True)
-#plt.show()
+plt.legend()
+plt.grid(True)
+plt.show()
