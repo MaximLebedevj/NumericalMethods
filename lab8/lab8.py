@@ -39,9 +39,9 @@ def numerical(ci, x_, v):
 # n - кол-во Ck
 # N - ков-во разбиений
 
-gamma1, gamma2 = 0.5, np.sqrt(2)
+gamma1, gamma2 = np.sqrt(1), np.sqrt(2)
 
-n = 5
+n = 2
 a = 0
 b = 1
 N = 9
