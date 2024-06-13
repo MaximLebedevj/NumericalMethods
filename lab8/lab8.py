@@ -19,38 +19,31 @@ def exact(x_):
     return np.sqrt(x_ + 1)
 
 
-def phi_i(i, x, h, xi):
-    if x >= xi[i - 1] and x <= xi[i]:
-        return (x - xi[i - 1]) / h
-    elif x >= xi[i] and x <= xi[i + 1]:
-        return -(x - xi[i + 1]) / h
+def phi_i(x, x_arr, i):
+    if x_arr[i - 1] <= x <= x_arr[i]:
+        return (x - x_arr[i - 1]) / h
+    elif x_arr[i] <= x <= x_arr[i + 1]:
+        return (x_arr[i + 1] - x) / h
     else:
         return 0
 
 
-def numerical(ci, x_, v):
-    sigma = 0.0
-    for i in range(len(ci)):
-        sigma += ci[i] * phi_i(i, x_, h, xi)
-    return sigma + v.subs(x, x_)
+def numerical(x, C, n):
+    sum = 0
+    for i in range(n):
+        sum += C[i] * phi_i(x, X, i + 1)
+    return sum
 
 
 # Параметры
-# n - кол-во Ck
-# N - ков-во разбиений
-
 gamma1, gamma2 = np.sqrt(1), np.sqrt(2)
+n, m = 10, 10
+a, b = 0, 1
 
-n = 2
-a = 0
-b = 1
-N = 9
-
+C = [sp.symbols('C' + str(i + 1)) for i in range(n)]
+print("C: ", C)
 x = sp.Symbol('x')
 k = sp.Symbol('k')
-C = sp.IndexedBase('C')
-j = sp.symbols('j', cls=sp.Idx)
-u = sp.Symbol('u')
 
 f = f(sp.Symbol('x'))
 q = q(sp.Symbol('x'))
@@ -58,86 +51,66 @@ p = p(sp.Symbol('x'))
 
 
 # Сводим неоднородную задачу к однородной
-v = gamma1 + (gamma2 - gamma1) / (b - a) * (x - a)
-v_df = sp.diff(v, x)
-
-F = f - p * v_df - q * v
+v = gamma1 + (gamma2 - gamma1) * (x - a) / (b - a)
+F = f - p * sp.diff(v, x) - q * v
 print("F = ", F)
 
 
-# Задаем сетку xi с шагом h
-xi = []
-h = (b - a) / (N + 1)
-print("h = ", h)
-
-xi.append(a + 0 * h)
-for i in range(1, N + 1):
-    xi.append(a + i * h)
-xi.append(a + (N + 1) * h)
-
-print("xi = ", xi)
+# Задаем сетку X, кол-во элементов - кол-во C + 2
+h = (b - a) / (n + 1)
+X = np.linspace(a, b, n + 2)
+print("X: ", X)
 
 
-# Задаем количество C_k
-C_k = [C[j] for j in range(0, n)]
-print("\nC_k = ", C_k)
+# Задаем сетку xi, разбивка
+xi = np.linspace(a, b, m + 2)
+print("xi: ", xi)
+
+
+# матрица коэф. и правая часть
+A = np.zeros((n, n))
+d = np.zeros(n)
 
 
 # Составляем СЛАУ
-A = np.array([[0 for x in range(n+1)] for y in range(n)])
 for i in range(n):
-    for j in range(n):
-        A[i][i] = (-2 / h) + (1 / h**2) * \
-                (sp.integrate(p * (x - xi[i-1]), (x, xi[i-1], xi[i])) + 
-                 sp.integrate(q * (x - xi[i-1])**2, (x, xi[i-1], xi[i])) + 
-                 sp.integrate(p * (x - xi[i+1]), (x, xi[i], xi[i+1])) + 
-                 sp.integrate(q * (x - xi[i+1])**2, (x, xi[i], xi[i+1])))
+    A[i][i] = (-2 / h) + (1 / h**2) * \
+                (sp.integrate(p * (x - X[i-1]), (x, X[i-1], X[i])) +
+                 sp.integrate(q * (x - X[i-1])**2, (x, X[i-1], X[i])) +
+                 sp.integrate(p * (x - X[i+1]), (x, X[i], X[i+1])) +
+                 sp.integrate(q * (x - X[i+1])**2, (x, X[i], X[i+1])))
+    if i < n - 1:
+        A[i][i + 1] = (1 / h) - (1 / h**2) * \
+                      (sp.integrate(p * (x - X[i+1]), (x, X[i], X[i+1])) +
+                       sp.integrate(q * (x - X[i]) * (x - X[i+1]), (x, X[i], X[i+1])))
+    if i > 0:
+        A[i][i - 1] = (1 / h) - (1 / h**2) * \
+                      (sp.integrate(p * (x - X[i-1]), (x, X[i-1], X[i])) +
+                       sp.integrate(q * (x - X[i-1]) * (x - X[i]), (x, X[i-1], X[i])))
 
-        if j == i + 1:
-            A[i][j] = (1 / h) - (1 / h**2) * \
-                    (sp.integrate(p * (x - xi[i+1]), (x, xi[i], xi[i+1])) + 
-                     sp.integrate(q * (x - xi[i]) * (x - xi[i+1]), (x, xi[i], xi[i+1])))
+    d[i] = (sp.integrate(F * x, (x, X[i - 1], X[i])) - X[i - 1] * sp.integrate(F, (x, X[i - 1], X[i])) -
+            sp.integrate(F * x, (x, X[i], X[i + 1])) + X[i + 1] * sp.integrate(F, (x, X[i], X[i + 1]))) / h
 
-        if j == i - 1:
-            A[i][j] = (1 / h) - (1 / h**2) * \
-                    (sp.integrate(p * (x - xi[i-1]), (x, xi[i-1], xi[i])) +
-                     sp.integrate(q * (x - xi[i-1]) * (x - xi[i]), (x, xi[i-1], xi[i])))
+print("\nA = ", A)
+print("d = ", d)
 
-# Правая часть
-d = np.array([0 for x in range(n)])
-for i in range(n):
-    d[i] = (1 / h) * \
-           (sp.integrate(F * (x - xi[i-1]), (x, xi[i-1], xi[i])) +
-            sp.integrate(F * (x - xi[i+1]), (x, xi[i], xi[i+1]))) 
-
-for i in range(n):
-    A[i][n] = d[i]
-print("A = ", A)
+C = np.linalg.solve(A, d)
+print("\nC = ", C)
 
 
-# Решаем СЛАУ, находим Ci
-if n > 1:
-    lines = []
-    for i in range(n):
-        lines.append(A[i])
-    print("lines = ", lines)
-    Ci = sp.linsolve(sp.Matrix((lines))).args[0]
-else:
-    Ci = []
-    Ci.append(A[0][1] / A[0][0])
-print("Ci = ", Ci)
+# Численное решение
+w = np.zeros(m + 2)
+for i in range(m):
+    w[i + 1] = numerical(xi[i + 1], C, n)
 
-# Численное решение 
-u_numerical = []
-for i in range(len(xi)):
-    u_numerical.append(numerical(Ci, xi[i], v))
-print("u_numerical = ", u_numerical)
+u_numerical = np.zeros(m + 2)
+for i in range(m + 2):
+    u_numerical[i] = w[i] + v.subs(x, xi[i])
+print("\nu_numerical = ", u_numerical)
 
 
 # Точное решение
-u_exact = []
-for i in range(len(xi)):
-    u_exact.append(exact(xi[i]))
+u_exact = exact(xi)
 print("\nu_exact: ", u_exact)
 
 
@@ -146,6 +119,7 @@ error = []
 for i in range(len(xi)):
    error.append(abs(u_exact[i] - u_numerical[i]))
 print("\nerror : ", error)
+print("\nmax error: ", max(np.abs(u_numerical - u_exact)))
 
 
 # Визуализация
