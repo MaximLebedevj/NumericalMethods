@@ -36,8 +36,8 @@ def numerical(x, C, n):
 
 
 # Параметры
-gamma1, gamma2 = np.sqrt(1), np.sqrt(2)
-n, m = 10, 10
+gamma1, gamma2 = 1, np.sqrt(2)
+n, m = 5, 10
 a, b = 0, 1
 
 C = [sp.symbols('C' + str(i + 1)) for i in range(n)]
@@ -74,9 +74,12 @@ d = np.zeros(n)
 
 # Составляем СЛАУ
 for i in range(n):
+    el = X[i - 1]
+    if i == 0:
+        el = X[0]
     A[i][i] = (-2 / h) + (1 / h**2) * \
-                (sp.integrate(p * (x - X[i-1]), (x, X[i-1], X[i])) +
-                 sp.integrate(q * (x - X[i-1])**2, (x, X[i-1], X[i])) +
+                (sp.integrate(p * (x - el), (x, el, X[i])) +
+                 sp.integrate(q * (x - el)**2, (x, el, X[i])) +
                  sp.integrate(p * (x - X[i+1]), (x, X[i], X[i+1])) +
                  sp.integrate(q * (x - X[i+1])**2, (x, X[i], X[i+1])))
     if i < n - 1:
@@ -85,14 +88,16 @@ for i in range(n):
                        sp.integrate(q * (x - X[i]) * (x - X[i+1]), (x, X[i], X[i+1])))
     if i > 0:
         A[i][i - 1] = (1 / h) - (1 / h**2) * \
-                      (sp.integrate(p * (x - X[i-1]), (x, X[i-1], X[i])) +
-                       sp.integrate(q * (x - X[i-1]) * (x - X[i]), (x, X[i-1], X[i])))
+                      (sp.integrate(p * (x - el), (x, X[i-1], X[i])) +
+                       sp.integrate(q * (x - el) * (x - X[i]), (x, el, X[i])))
 
-    d[i] = (sp.integrate(F * x, (x, X[i - 1], X[i])) - X[i - 1] * sp.integrate(F, (x, X[i - 1], X[i])) -
+    d[i] = (sp.integrate(F * x, (x, el, X[i])) - X[i - 1] * sp.integrate(F, (x, el, X[i])) -
             sp.integrate(F * x, (x, X[i], X[i + 1])) + X[i + 1] * sp.integrate(F, (x, X[i], X[i + 1]))) / h
 
 print("\nA = ", A)
 print("d = ", d)
+
+A = np.transpose(A)
 
 C = np.linalg.solve(A, d)
 print("\nC = ", C)
